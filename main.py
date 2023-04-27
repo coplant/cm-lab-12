@@ -14,15 +14,13 @@ class Application(QMainWindow):
 
     def __init__(self):
         super(Application, self).__init__()
-        self.matrix_size = None
         self.data = None
+        self.key = None
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
         self.show()
 
         self.ui.btn_enc.setChecked(True)
-
-        self.abc = "abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя ."  # 61 - prime number
         # self.abc = "abcdefghijklmnopqrstuvwxyz"
 
         self.ui.proc_button.clicked.connect(self.process_data)
@@ -30,19 +28,24 @@ class Application(QMainWindow):
         self.ui.save_file.triggered.connect(self.save)
 
     def process_data(self):
-        self.data = self.ui.plain_text.toPlainText()
+        self.data = self.ui.plain_text.toPlainText().encode("ansi")
+        self.key = self.ui.line_key.text().encode("ansi")
+        if len(self.data) != len(self.key):
+            return QMessageBox.information(self, "Ошибка", "Длина ключа должна совпадать с длиной сообщения",
+                                           QMessageBox.Ok)
         try:
-            if self.ui.btn_enc.isChecked():
-                self.data = self.crypt_text(self.Action.ENCRYPT.value)
-            elif self.ui.btn_dec.isChecked():
-                self.data = self.crypt_text(self.Action.DECRYPT.value)
+            self.data = self.crypt_text()
         except ValueError as e:
             ...
         self.ui.cipher_text.setText(str(self.data))
 
-    def crypt_text(self, choice):
-        text = ""
-        return text
+    def crypt_text(self):
+        text = bytearray(self.data)
+        key = bytearray(self.key)
+        result = bytearray()
+        for i in range(len(text)):
+            result.append(text[i] ^ key[i])
+        return result.decode("ansi")
 
     def open(self):
         file_name = QFileDialog.getOpenFileName(self, "Открыть файл", ".", "All Files (*)")
